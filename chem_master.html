@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ChemTycoon Mini</title>
+
+<!-- ───────────── GLOBAL THEME ───────────── -->
+<style>
+:root{
+  --bg1:#0f172a; --bg2:#1e293b; --surface:#172036; --accent:#38bdf8; --good:#4ade80;
+  --danger:#f87171; --text:#e2e8f0; --radius:8px; --shadow:0 4px 16px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+body{height:100vh;display:flex;flex-direction:column;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);overflow:hidden}
+button{cursor:pointer;border:none;border-radius:var(--radius);padding:.4rem .8rem;background:var(--surface);color:var(--text);transition:.2s}
+button:hover{filter:brightness(1.25)}
+h2{font-size:1.2rem;margin-bottom:.4rem}
+small{opacity:.7}
+
+/* ─ header / HUD ─ */
+header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.6rem;background:var(--surface);box-shadow:var(--shadow)}
+#hud span{margin-right:1.2rem;font-weight:600}
+#hud strong{color:var(--accent)}
+#exit{background:var(--danger);color:#fff}
+
+/* ─ main layout ─ */
+main{flex:1;display:grid;grid-template-columns:260px 1fr 260px;height:100%}
+aside{background:var(--surface);padding:1rem;overflow:auto}
+#right aside{display:flex;flex-direction:column}
+
+/* ─ build list ─ */
+.buildBtn{display:block;margin:.3rem 0;text-align:left}
+.buildBtn.active{background:var(--accent);color:#fff}
+
+/* ─ grid ─ */
+#grid{display:grid;grid-template-columns:repeat(10,50px);grid-template-rows:repeat(10,50px);gap:2px;justify-content:center;align-content:center;height:100%}
+.cell{width:50px;height:50px;background:rgba(255,255,255,.05);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.75rem;user-select:none;position:relative;transition:.2s}
+.cell:hover{outline:2px dashed var(--accent);cursor:pointer}
+.cell.building{background:var(--accent);color:#fff}
+.cell.extractor{background:#facc15}
+.cell.reactor{background:#34d399}
+.cell.seller{background:#f87171}
+
+/* ─ inventory table ─ */
+#invTable td{padding:.2rem .4rem;font-size:.85rem}
+
+/* toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:.6rem 1rem;border-radius:var(--radius);background:var(--good);color:#fff;box-shadow:var(--shadow);opacity:.95;z-index:1000}
+</style>
+</head>
+<body>
+
+<!-- ───────────── HEADER / HUD ───────────── -->
+<header>
+  <h1>ChemTycoon Mini</h1>
+  <div id="hud">
+    <span>💰 <strong id="money">$0</strong></span>
+    <span>🔋 <strong id="energy">0</strong></span>
+    <span>⏱ <small>Tick = 1 s</small></span>
+  </div>
+  <button id="exit" onclick="location.href='launcher.html'">Exit</button>
+</header>
+
+<!-- ───────────── MAIN PANEL ───────────── -->
+<main>
+  <!-- LEFT PANEL – BUILDINGS -->
+  <aside id="left">
+    <h2>Build</h2>
+    <button class="buildBtn" data-type="extractor">Extractor&nbsp;($50)</button>
+    <button class="buildBtn" data-type="reactor">Reactor&nbsp;($100)</button>
+    <button class="buildBtn" data-type="seller">Seller&nbsp;($75)</button>
+    <h2 style="margin-top:1rem">Delete</h2>
+    <button class="buildBtn" data-type="delete">Demolish</button>
+    <h2 style="margin-top:1rem">Tips</h2>
+    <p style="font-size:.85rem;line-height:1.3">
+      • Place <b>Extractor</b> → 产出随机元素<br>
+      • <b>Reactor</b> 自动寻找可合成配方<br>
+      • <b>Seller</b> 把库存最高价产品卖掉<br>
+      • 建筑运行需 1 ⚡/tick，能量不足则暂停<br>
+      • 点击建筑查看详情
+    </p>
+  </aside>
+
+  <!-- CENTER – GRID -->
+  <section id="grid"></section>
+
+  <!-- RIGHT PANEL – INVENTORY / INFO -->
+  <aside id="right">
+    <h2>Inventory</h2>
+    <table id="invTable"></table>
+    <h2 style="margin-top:1rem">Info</h2>
+    <div id="infoBox" style="font-size:.9rem;line-height:1.35"></div>
+  </aside>
+</main>
+
+<!-- ───────────── DATA (elements & recipes) ───────────── -->
+<script id="elementsData" type="application/json">
+[
+{"symbol":"H","name":"Hydrogen","info":"Lightest element; rocket fuel."},
+{"symbol":"O","name":"Oxygen","info":"Supports combustion; essential for life."},
+{"symbol":"C","name":"Carbon","info":"Basis of organic chemistry."},
+{"symbol":"Na","name":"Sodium","info":"Soft metal; reacts violently with water."},
+{"symbol":"Cl","name":"Chlorine","info":"Greenish gas; disinfectant."},
+{"symbol":"N","name":"Nitrogen","info":"78% of Earth's atmosphere."}
+]
+</script>
+<script id="recipesData" type="application/json">
+[
+{"inputs":["H","H","O"],"product":"Water","formula":"H₂O","price":8},
+{"inputs":["Na","Cl"],"product":"Salt","formula":"NaCl","price":12},
+{"inputs":["C","O","O"],"product":"CO₂","formula":"CO₂","price":6},
+{"inputs":["N","H","H","H"],"product":"Ammonia","formula":"NH₃","price":10}
+]
+</script>
+
+<!-- ───────────── GAME SCRIPT ───────────── -->
+<script>
+/* ======= helpers ======= */
+const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function toast(msg,col){const d=document.createElement('div');d.className='toast';d.style.background=col||'var(--good)';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),1200);}
+function rand(a){return a[Math.floor(Math.random()*a.length)]}
+
+/* ======= data ======= */
+const elements = JSON.parse($('#elementsData').textContent);
+const recipes  = JSON.parse($('#recipesData').textContent);
+
+/* ======= state ======= */
+const size=10; // grid 10x10
+let money     = +localStorage.getItem('money') || 100;
+let energy    = +localStorage.getItem('energy')|| 20;
+let inventory = JSON.parse(localStorage.getItem('inv')||'{}'); // {"H":3,...}
+let grid      = JSON.parse(localStorage.getItem('grid')||'[]'); // [{x,y,type,progress}]
+if(grid.length===0){grid=[];} // new game
+
+let buildMode = null;
+
+/* ======= DOM init ======= */
+const g=$('#grid');
+for(let y=0;y<size;y++){
+  for(let x=0;x<size;x++){
+    const c=document.createElement('div');
+    c.className='cell'; c.dataset.x=x; c.dataset.y=y;
+    c.onclick=()=>handleCell(x,y,c);
+    g.appendChild(c);
+  }
+}
+render();
+
+/* ======= building buttons ======= */
+$$('.buildBtn').forEach(btn=>{
+  btn.onclick=()=>{
+    $$('button.buildBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    buildMode=btn.dataset.type;
+  };
+});
+
+/* ======= core loop ======= */
+setInterval(tick,1000);
+
+/* ======= functions ======= */
+function handleCell(x,y,cell){
+  const existing = grid.find(b=>b.x===x&&b.y===y);
+  if(buildMode==='delete'){
+    if(existing){grid=grid.filter(b=>b!==existing); toast('Removed', 'var(--danger)');}
+  }else if(buildMode && !existing){
+    const cost = {extractor:50,reactor:100,seller:75}[buildMode];
+    if(money>=cost){
+      money-=cost;
+      grid.push({x,y,type:buildMode,progress:0});
+      toast(buildMode+' built');
+    }else toast('Not enough money','var(--danger)');
+  }else if(existing){
+    showInfo(existing);
+  }
+  render();
+}
+
+function tick(){
+  // energy regen
+  energy = Math.min(energy+1, 50);
+
+  // buildings run
+  for(const b of grid){
+    if(energy<=0)break;
+    if(b.type==='extractor'){
+      const el = rand(elements).symbol;
+      inventory[el]=(inventory[el]||0)+1;
+      money+=1; energy--;
+    }
+    if(b.type==='reactor'){
+      const r = recipes.find(r=>r.inputs.every(i=>inventory[i]>0));
+      if(r){
+        r.inputs.forEach(i=>inventory[i]--);
+        inventory[r.product]=(inventory[r.product]||0)+1;
+        energy--;
+      }
+    }
+    if(b.type==='seller'){
+      const sellKey = Object.keys(inventory).filter(k=>k!=='energy'&&inventory[k]>0)
+                      .sort((a,b)=>valueOf(b)-valueOf(a))[0];
+      if(sellKey){
+        money+=valueOf(sellKey);
+        inventory[sellKey]--; energy--;
+      }
+    }
+  }
+  persist(); render();
+}
+
+function valueOf(key){
+  const r=recipes.find(r=>r.product===key); return r? r.price : 2;
+}
+
+function showInfo(b){
+  const box=$('#infoBox');
+  if(b.type==='extractor'){box.innerHTML='<b>Extractor</b><br>Produces random element.';}
+  if(b.type==='reactor'){box.innerHTML='<b>Reactor</b><br>Combines reagents into compounds.';}
+  if(b.type==='seller'){box.innerHTML='<b>Seller</b><br>Sells highest‑value item.';}
+}
+
+function render(){
+  // HUD
+  $('#money').textContent='$'+money.toFixed(0);
+  $('#energy').textContent=energy;
+
+  // grid
+  $$(`#grid .cell`).forEach(c=>{
+    c.className='cell'; c.textContent='';
+  });
+  for(const b of grid){
+    const idx=b.y*size+b.x; const cell=g.children[idx];
+    cell.classList.add('building',b.type);
+    cell.textContent={extractor:'⛏',reactor:'⚗',seller:'💲'}[b.type];
+  }
+
+  // inventory
+  const table=$('#invTable'); table.innerHTML='';
+  Object.entries(inventory).filter(([k,v])=>v>0).forEach(([k,v])=>{
+    const el=elements.find(e=>e.symbol===k)||recipes.find(r=>r.product===k);
+    const row=document.createElement('tr');
+    row.innerHTML=`<td>${k}</td><td>${v}</td>`;
+    row.title=(el?.info||el?.formula||'');
+    row.onclick=()=>alert(`${k}\n${el?.info||el?.formula||''}`);
+    table.appendChild(row);
+  });
+
+  // save selected button highlight persists
+  $$('button.buildBtn').forEach(b=>b.classList.toggle('active',b.dataset.type===buildMode));
+}
+
+function persist(){
+  localStorage.setItem('money',money);
+  localStorage.setItem('energy',energy);
+  localStorage.setItem('inv',JSON.stringify(inventory));
+  localStorage.setItem('grid',JSON.stringify(grid));
+}
+
+/* ======= first info ======= */
+$('#infoBox').innerHTML='Select a building or item to see details.';
+</script>
+</body>
+</html>

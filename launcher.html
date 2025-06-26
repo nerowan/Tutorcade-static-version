@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tutorcade — Learn by Playing</title>
+<link rel="icon" href="/img/Logo.png" type="image/png" sizes="32x32">
+
+<!-- ============ GLOBAL STYLE ============ -->
+<style>
+:root{
+  --bg:#e9ecf2;--glass:#ffffffe0;--border:#ffffff38;
+  --primary:#204368;--primary-dark:#19324d;
+  --accent:#c89c3c;--radius:1rem;--shadow:0 8px 22px rgba(0,0,0,.07);
+  --blur:14px;--tooltip-bg:rgba(0,0,0,.75);--tooltip-color:#fff;
+}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto;background:var(--bg);color:#333;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+button,select,input{font:inherit;cursor:pointer}
+.container{width:min(92%,1600px);margin:auto;position:relative}
+.btn{padding:.7rem 1.5rem;border:none;border-radius:var(--radius);font-weight:600;transition:.25s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-ghost{background:none;border:2px solid #fff;color:#fff}.btn-ghost:hover{background:#ffffff26}
+.btn-disabled{background:#a5a8b0;color:#fff;cursor:not-allowed}
+.btn-red{background:#e76a6a;color:#fff}
+.glass{background:var(--glass);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);animation:fadeIn .6s ease}
+.hidden{display:none !important}
+
+/* header */
+header{background:linear-gradient(135deg,#204368 0%,#19324d 100%);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
+.logo{font-size:1.7rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.header-right{display:flex;align-items:center;gap:1rem;position:relative}
+nav ul{display:flex;list-style:none;gap:1.2rem}
+nav li{cursor:pointer;font-weight:600;position:relative}
+nav li::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:2px;background:#fff;border-radius:1px;transition:.3s}
+nav li:hover::after{width:100%}
+.profile-link{cursor:pointer;text-decoration:underline}
+
+/* user dropdown */
+.user-dropdown{position:absolute;top:120%;right:0;width:160px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:.4rem 0;display:none;flex-direction:column;z-index:1500}
+.user-dropdown a{padding:.6rem 1rem;color:#204368;text-decoration:none;font-weight:500;transition:background .2s}
+.user-dropdown a:hover{background:#20436822}
+
+/* sections */
+main{flex:1}
+.section{display:none;padding:3rem 0}
+.active{display:block}
+
+/* hero */
+.hero{
+  min-height:88vh;
+  background:
+    linear-gradient(rgba(32,67,104,.85),rgba(25,50,77,.85)),
+    url("img/hero_bg.jpg") center/cover no-repeat;
+  color:#fff;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:2.2rem;
+  padding:4rem 1rem
+}
+.hero-content{max-width:600px;padding:0 1rem}
+.hero-content h1{font-size:clamp(2.4rem,5vw,3.4rem);line-height:1.2;margin-bottom:1rem}
+.hero-content p{font-size:1.15rem;margin-bottom:2rem}
+.hero-img img{max-width:420px;width:100%;border-radius:var(--radius);box-shadow:var(--shadow)}
+
+/* features */
+.feature-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:2rem;
+  margin-top:-10rem;          /* ▲ 再向上提升，遮盖更多 hero */
+}
+.feature-card{padding:2rem;display:flex;flex-direction:column;gap:.9rem}
+.feature-card svg{width:48px;height:48px;fill:var(--primary)}
+
+/* plaza */
+.plaza-controls{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1.6rem}
+.category-btn{border:1px solid var(--primary);background:none;color:var(--primary);padding:.45rem 1rem;border-radius:var(--radius);cursor:pointer;font-weight:600}
+.category-btn.active{background:var(--primary);color:#fff}
+#searchInput{flex:1;min-width:200px;padding:.6rem 1rem;border-radius:.7rem;border:1px solid #b1b5c2}
+
+/* 3×2 grid */
+.game-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+@media(max-width:1100px){.game-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:750px){.game-grid{grid-template-columns:1fr}}
+
+.game-card{display:flex;flex-direction:column;gap:1rem;padding:1rem}
+.game-thumb{width:100%;height:200px;background:#d9dee7;border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.game-thumb img{width:100%;height:100%;object-fit:cover}
+.game-card.disabled{opacity:.55}
+
+/* pagination */
+#pager{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:2rem}
+#pager button{padding:.6rem 1rem;border:none;border-radius:.6rem;font-weight:600}
+#pager span{font-weight:600}
+
+/* donate */
+.donate-group{margin-bottom:2.4rem}
+.donate-grid{display:flex;flex-wrap:wrap;gap:1.6rem;justify-content:center}
+.donate-item{flex:1 1 220px;min-width:180px;text-align:center}
+.donate-item img{width:64px;height:64px;margin-bottom:.6rem}
+.donate-item button{margin-top:.6rem;padding:.5rem 1rem;border:none;border-radius:.6rem;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+
+/* AUTH */
+#auth h2{margin-bottom:2rem}
+
+/* animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="logo">
+    <img src="img/logo.png" alt="Tutorcade Logo" style="height:36px">
+    Tutorcade
+  </div>
+  <div class="header-right">
+    <button id="btnLogin" class="btn btn-ghost" onclick="show('auth')">Login</button>
+    <nav id="nav" class="hidden">
+      <ul>
+        <li onclick="show('plaza')" data-i="nav_plaza">Game Library</li>
+        <li onclick="show('donate')" data-i="nav_donate">Donate</li>
+      </ul>
+    </nav>
+    <span id="usernameLabel" class="profile-link hidden"></span>
+    <button id="btnLogout" class="btn btn-ghost hidden" onclick="logout()">Logout</button>
+
+    <div id="userDropdown" class="user-dropdown">
+      <a href="#" onclick="show('profile');toggleDropdown(false)">Profile</a>
+      <a href="#" onclick="show('settings');toggleDropdown(false)">Settings</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <!-- HOME -->
+  <section id="home" class="section active">
+    <div class="hero container">
+      <div class="hero-content">
+        <h1 data-i="hero_title">Learn through Play</h1>
+        <p data-i="hero_desc">Tutorcade brings together engaging mini‑games that turn classroom subjects into fun challenges. Earn points, track progress, and discover the joy of learning!</p>
+        <button class="btn btn-primary" onclick="show('auth')">Start Your Adventure</button>
+      </div>
+      <div class="hero-img">
+        <img id="heroSlide" src="img/slide1.jpg" alt="Hero showcase">
+      </div>
+    </div>
+
+    <div class="feature-grid container">
+      <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 13L2 10v7l10 5 10-5v-7l-10 5z"/></svg><h3 data-i="f1_title">Gamified Curriculum</h3><p data-i="f1_desc"></p></div>
+      <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4z"/></svg><h3 data-i="f2_title">Achievement Badges</h3><p data-i="f2_desc"></p></div>
+      <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M3 17h18v2H3zM6 10h2v5H6zm5-4h2v9h-2zm5 8h2v1h-2z"/></svg><h3 data-i="f3_title">Progress Analytics</h3><p data-i="f3_desc"></p></div>
+      <div class="glass feature-card"><svg viewBox="0 0 24 24"><path d="M7 13h4v8H7zM13 9h4v12h-4zM19 5h4v16h-4zM1 17h4v4H1z"/></svg><h3 data-i="f4_title">Class Leaderboards</h3><p data-i="f4_desc"></p></div>
+    </div>
+  </section>
+
+  <!-- AUTH -->
+  <section id="auth" class="section">
+    <div class="glass container" style="max-width:440px;padding:2.4rem">
+      <h2 data-i="auth_title">Login / Sign Up</h2>
+      <input id="authUser" class="glass" placeholder="Username" style="width:100%;padding:.8rem;margin-bottom:1rem">
+      <input id="authPwd" type="password" class="glass" placeholder="Password" style="width:100%;padding:.8rem;margin-bottom:1rem">
+      <select id="authMode" class="glass" style="width:100%;padding:.65rem;margin-bottom:1.8rem">
+        <option value="login" data-i="mode_login">Login</option>
+        <option value="register" data-i="mode_register">Register</option>
+      </select>
+      <div style="display:flex;gap:1rem">
+        <button class="btn btn-primary" onclick="auth()">Submit</button>
+        <button class="btn" style="flex:1" onclick="show('home')">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAZA -->
+  <section id="plaza" class="section">
+    <div class="container">
+      <h2 style="margin-bottom:1.5rem" data-i="plaza_title">Game Library</h2>
+
+      <div class="plaza-controls">
+        <div id="catBtns" style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="category-btn active" data-cat="all">All</button>
+          <button class="category-btn" data-cat="Business">Business</button>
+          <button class="category-btn" data-cat="Biology">Biology</button>
+          <button class="category-btn" data-cat="Math">Math</button>
+          <button class="category-btn" data-cat="History">History</button>
+          <button class="category-btn" data-cat="Reading">Reading</button>
+          <button class="category-btn" data-cat="More">More</button>
+        </div>
+        <input id="searchInput" placeholder="Search games...">
+      </div>
+
+      <div id="gameGrid" class="game-grid"></div>
+
+      <div id="pager" class="hidden">
+        <button id="prevBtn" class="btn btn-primary">Prev</button>
+        <span id="pageInfo"></span>
+        <button id="nextBtn" class="btn btn-primary">Next</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="profile" class="section">
+    <div class="container">
+      <h2 style="margin-bottom:1.5rem">Profile</h2>
+      <p>Username: <strong id="profileUsername"></strong></p>
+      <p>Points: <strong id="profilePoints">0</strong></p>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="section">
+    <div class="container">
+      <h2 style="margin-bottom:1.5rem">Settings</h2>
+      <p>Language:</p>
+      <select id="settingsLangSel" onchange="switchLang(this.value)">
+        <option value="en">English</option><option value="zh">中文</option>
+      </select>
+      <button class="btn btn-red" style="margin-top:2rem" onclick="deleteAccount()">Delete Account</button>
+      <p style="margin-top:.6rem;font-size:.9rem;color:#c00">This will permanently delete all your data.</p>
+    </div>
+  </section>
+
+  <!-- DONATE -->
+  <section id="donate" class="section">
+    <div class="container">
+      <h2 style="margin-bottom:2rem;text-align:center">Support Tutorcade</h2>
+      <div class="donate-group">
+        <h3 style="text-align:center;margin-bottom:1rem">International Support</h3>
+        <div class="donate-grid">
+          <div class="donate-item">
+            <img src="img/paypal.png" alt="PayPal">
+            <h4>PayPal</h4>
+            <button onclick="window.open('https://paypal.me/yourid','_blank')">Donate via PayPal</button>
+          </div>
+        </div>
+      </div>
+      <div class="donate-group">
+        <h3 style="text-align:center;margin-bottom:1rem">中国支持</h3>
+        <div class="donate-grid">
+          <div class="donate-item">
+            <img src="img/wechatpay.png" alt="WeChat Pay">
+            <h4>微信支付</h4>
+            <button onclick="window.open('img/wechat_qr.png','_blank')">扫码捐助</button>
+          </div>
+          <div class="donate-item">
+            <img src="img/alipay.png" alt="Alipay">
+            <h4>支付宝</h4>
+            <button onclick="window.open('img/alipay_qr.png','_blank')">扫码捐助</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ SCRIPT ============ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- hero carousel ---------- */
+  const slides=['img/slide1.jpg','img/slide2.jpg','img/slide3.jpg'];let slideIdx=0;
+  setInterval(()=>{slideIdx=(slideIdx+1)%slides.length;document.getElementById('heroSlide').src=slides[slideIdx];},4000);
+  
+  /* ---------- i18n ---------- */
+  const L = {
+    en: {hero_title:"Learn through Play",hero_desc:"Tutorcade brings together engaging mini‑games that turn classroom subjects into fun challenges. Earn points, track progress, and discover the joy of learning!",nav_plaza:"Game Library",nav_donate:"Donate",auth_title:"Login / Sign Up",mode_login:"Login",mode_register:"Register",plaza_title:"Game Library",f1_title:"Gamified Curriculum",f1_desc:"Curriculum‑aligned levels that feel like quests, not homework.",f2_title:"Achievement Badges",f2_desc:"Collect badges as you master new concepts.",f3_title:"Progress Analytics",f3_desc:"Visual dashboards make improvement tangible.",f4_title:"Class Leaderboards",f4_desc:"Inspire healthy competition & teamwork."},
+    zh: {hero_title:"游戏化学习",hero_desc:"Tutorcade 通过趣味小游戏将课堂知识变成闯关挑战。赢取积分、追踪进度，让学习充满乐趣！",nav_plaza:"游戏库",nav_donate:"捐赠",auth_title:"登录 / 注册",mode_login:"登录",mode_register:"注册",plaza_title:"游戏库",f1_title:"课程游戏化",f1_desc:"与教学大纲一致的关卡，学习不再枯燥。",f2_title:"成就徽章",f2_desc:"解锁新知识，收集专属徽章。",f3_title:"进度分析",f3_desc:"可视化图表让成长看得见。",f4_title:"班级排行榜",f4_desc:"激发良性竞争与团队精神。"}
+  };
+  let lang = localStorage.getItem('biz-lang') || 'en';
+  function setTexts() {
+    document.querySelectorAll('[data-i]').forEach(el => {
+      const k = el.dataset.i;
+      if (L[lang][k]) el.innerText = L[lang][k];
+    });
+  }
+  window.switchLang = v => {
+    lang = v;
+    localStorage.setItem('biz-lang', v);
+    setTexts();
+    const sel = document.getElementById('settingsLangSel');
+    if (sel) sel.value = lang;
+  };
+  setTexts();
+  const selInit = document.getElementById('settingsLangSel');
+  if (selInit) selInit.value = lang;
+
+  /* ---------- helpers ---------- */
+  const $$ = s => document.querySelectorAll(s),
+        $  = s => document.querySelector(s);
+  window.show = id => {$$('.section').forEach(sec => sec.classList.remove('active'));$('#' + id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});};
+
+  /* dropdown */
+  const dropdown = $('#userDropdown'),
+        userLabel = $('#usernameLabel');
+  function toggleDropdown(flag=true){dropdown.style.display = flag ? 'flex' : 'none';}
+  userLabel.addEventListener('click',e=>{e.stopPropagation();toggleDropdown(dropdown.style.display!=='flex');});
+  document.addEventListener('click',()=>toggleDropdown(false));
+
+  /* ---------- game data ---------- */
+  const games = [
+    {title:'APbioworld Biology Quest',cat:'Biology',thumb:'img/apbio_cover.jpg',desc:'Dive into AP Biology concepts, master cell cycles, genetics & more.',path:'apbio_quest.html',ready:true},
+    {title:'SAT Reading Master',cat:'Reading',thumb:'img/sat_reading_cover.jpg',desc:'Practice critical‑reading passages and boost your SAT verbal score.',path:'sat_reader_adventure.html',ready:true},
+    {title:'Math Puzzles',cat:'Math',thumb:'img/math.jpg',desc:'Solve arithmetic & algebra quests to level‑up your ninja skills.',path:'math.html',ready:true},
+    {title:'Chronoquest',cat:'History',thumb:'img/chronoquest.jpg',desc:'Fix timeline anomalies by answering history trivia.',path:'chronoquest.html',ready:true},
+    {title:'Chem Master',cat:'More',thumb:'img/chem.jpg',desc:'Master chemical equations through interactive labs.',path:'chem_master.html',ready:true},
+    {title:'AP_Psychology',cat:'More',thumb:'img/AP_psy.jpg',desc:'Learning AP Psychology through playing game',path:'ap_psychology.html',ready:true},
+  ];
+
+  const grid = $('#gameGrid');
+  const cardHTML = g => `
+    <div class="glass game-card${g.ready?'':' disabled'}" data-title="${g.title.toLowerCase()}" data-cat="${g.cat.toLowerCase()}">
+      <div class="game-thumb"><img src="${g.thumb}" alt="${g.title}"></div>
+      <h3>${g.title}</h3>
+      <p>${g.desc}</p>
+      ${g.ready ? `<button class="btn btn-primary" onclick="playGame('${g.path}')">Play</button>`
+                 : `<button class="btn btn-disabled" disabled>Coming Soon</button>`}
+    </div>`;
+  grid.innerHTML = games.map(cardHTML).join('');
+
+  const ALL_CARDS = [...grid.children];
+
+  /* ---------- pagination ---------- */
+  const PAGE_SIZE = 6;
+  const pager   = $('#pager'),
+        prevBtn = $('#prevBtn'),
+        nextBtn = $('#nextBtn'),
+        pageInfo= $('#pageInfo');
+  let visibleCards = [...ALL_CARDS];
+  let currentPage  = 1;
+  function refreshPager(){
+    const totalPages = Math.ceil(visibleCards.length/PAGE_SIZE)||1;
+    pager.classList.toggle('hidden', totalPages<=1);
+    pageInfo.textContent = `${currentPage} / ${totalPages}`;
+    prevBtn.disabled = currentPage===1;
+    nextBtn.disabled = currentPage===totalPages;
+  }
+  function showPage(n=1){
+    currentPage=n;
+    ALL_CARDS.forEach(c=>c.style.display='none');
+    visibleCards.forEach((c,i)=>{
+      if(i>=PAGE_SIZE*(n-1)&&i<PAGE_SIZE*n) c.style.display='flex';
+    });
+    refreshPager();
+  }
+  prevBtn.onclick = ()=>currentPage>1 && showPage(currentPage-1);
+  nextBtn.onclick = ()=>showPage(currentPage+1);
+
+  /* ---------- filter ---------- */
+  const catBtns = $$('#catBtns .category-btn'), searchInput = $('#searchInput');
+  catBtns.forEach(btn=>btn.addEventListener('click',()=>{
+    catBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilter();
+  }));
+  searchInput.addEventListener('input',applyFilter);
+  function applyFilter(){
+    const activeCat = $('#catBtns .active').dataset.cat.toLowerCase();
+    const q = searchInput.value.trim().toLowerCase();
+    visibleCards = ALL_CARDS.filter(card=>{
+      const inCat = activeCat==='all' || card.dataset.cat===activeCat;
+      const inQ   = card.dataset.title.includes(q);
+      return inCat && inQ;
+    });
+    showPage(1);
+  }
+
+  /* ---------- user auth & points ---------- */
+  let user=null,userPoints=0;
+  const pointKey = ()=>'bizPoints_'+user;
+  function loadPoints(){userPoints=+localStorage.getItem(pointKey())||0;$('#profilePoints').innerText=userPoints;}
+
+  window.auth = ()=>{
+    const u=$('#authUser').value.trim(),p=$('#authPwd').value.trim(),m=$('#authMode').value;
+    if(!u||!p) return alert('Input required');
+    const users=JSON.parse(localStorage.getItem('bizUsers')||'{}');
+    if(m==='register'){if(users[u])return alert('User exists');users[u]={pwd:p};localStorage.setItem('bizUsers',JSON.stringify(users));alert('Registered');return;}
+    if(!users[u]||users[u].pwd!==p) return alert('Wrong credentials');
+    user=u;localStorage.setItem('bizCurrentUser',u);
+    $('#btnLogin').classList.add('hidden');$('#nav').classList.remove('hidden');
+    userLabel.classList.remove('hidden');$('#btnLogout').classList.remove('hidden');
+    userLabel.innerText=u;$('#profileUsername').innerText=u;loadPoints();show('plaza');
+  };
+  window.logout = ()=>{
+    localStorage.removeItem('bizCurrentUser');user=null;
+    $('#btnLogin').classList.remove('hidden');$('#nav').classList.add('hidden');
+    userLabel.classList.add('hidden');$('#btnLogout').classList.add('hidden');
+    toggleDropdown(false);show('home');
+  };
+  window.deleteAccount = ()=>{
+    if(!user) return;
+    if(!confirm('This will permanently delete your account and all data. Continue?'))return;
+    const users=JSON.parse(localStorage.getItem('bizUsers')||'{}');delete users[user];localStorage.setItem('bizUsers',JSON.stringify(users));
+    ['bizSaves_','bizPoints_','bizAchiev_'].forEach(k=>localStorage.removeItem(k+user));
+    for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith('bizTasks_'+user+'_'))localStorage.removeItem(k);}
+    alert('Account deleted.');logout();
+  };
+
+  /* ---------- play ---------- */
+  window.playGame = path => location.href = path;
+
+  /* ---------- init ---------- */
+  document.addEventListener('DOMContentLoaded',()=>{
+    const u=localStorage.getItem('bizCurrentUser');
+    if(u){user=u;$('#btnLogin').classList.add('hidden');$('#nav').classList.remove('hidden');userLabel.classList.remove('hidden');$('#btnLogout').classList.remove('hidden');userLabel.innerText=u;$('#profileUsername').innerText=u;loadPoints();show('plaza');}
+    applyFilter();
+  });
+
+})();
+</script>
+</body>
+</html>
