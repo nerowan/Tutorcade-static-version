@@ -298,9 +298,9 @@ function unlockUI(){document.querySelectorAll(".poi").forEach(p=>{
    =======================================================*/
 tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");
   t.dataset.tab==="log"?renderLog():renderHome();});
-function renderHome(){body.innerHTML="<p>Use ⬅️⬆️⬇️➡️ to move. Enter buildings to compete.</p>";}
+function renderHome(){body.inner="<p>Use ⬅️⬆️⬇️➡️ to move. Enter buildings to compete.</p>";}
 function renderLog(){
-  body.innerHTML=`<h3>Words</h3>${[...state.vocab].map(w=>`<span class="badge">${w}</span>`).join("")||"None yet."}
+  body.inner=`<h3>Words</h3>${[...state.vocab].map(w=>`<span class="badge">${w}</span>`).join("")||"None yet."}
   <h3 style="margin-top:1rem">League Score : ${state.score}</h3>`;
 }
 function openBag(){tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab==="log"));renderLog();}
@@ -311,16 +311,16 @@ function openBag(){tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab==="
 let idx=null,clock=0;function now(){return performance.now();}
 function enter(i){
   idx=i;const L=LEVELS[i];
-  body.innerHTML=`<div class="section"><h3>${L.title}</h3><p><em>${L.cut}</em></p><p style="margin-top:.8rem">${L.entry}</p></div><div class="section" id="pass"></div><div class="section" id="task"></div>`;
+  body.inner=`<div class="section"><h3>${L.title}</h3><p><em>${L.cut}</em></p><p style="margin-top:.8rem">${L.entry}</p></div><div class="section" id="pass"></div><div class="section" id="task"></div>`;
   renderPassage(i);setup(i);tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab==="quest"));clock=now();
 }
 function renderPassage(i){
-  const c=document.getElementById("pass");c.innerHTML="";
+  const c=document.getElementById("pass");c.inner="";
   LEVELS[i].passage.forEach((s,n)=>{
     if(LEVELS[i].task.type==="collect")s=s.replace(/\{(.*?)\}/g,(_,w)=>`<span class="token" data-word="${w}">${w}</span>`);
     if(LEVELS[i].task.type==="highlight")s=s.replace(/\{(.*?)\}/g,(_,w)=>`<span class="token" data-tag="device">${w}</span>`);
     if(LEVELS[i].task.type==="gap")s=s.replace(/\{_____}/g,"<span class='gap' contenteditable></span>");
-    const span=document.createElement("span");span.className="sentence";span.dataset.n=n;span.innerHTML=s+" ";c.appendChild(span);
+    const span=document.createElement("span");span.className="sentence";span.dataset.n=n;span.inner=s+" ";c.appendChild(span);
   });
 }
 
@@ -328,7 +328,7 @@ function renderPassage(i){
    7. 任务
    =======================================================*/
 function setup(i){
-  const L=LEVELS[i],box=document.getElementById("task");box.innerHTML=`<h3>Task</h3><p>${L.task.prompt||""}</p>`;
+  const L=LEVELS[i],box=document.getElementById("task");box.inner=`<h3>Task</h3><p>${L.task.prompt||""}</p>`;
   const t=L.task.type;
   if(t==="evidence")document.querySelectorAll(".sentence").forEach(s=>s.onclick=()=>{selSentence(s,i)});
   else if(t==="scramble")scramble(i);
@@ -384,7 +384,7 @@ function match(i){
 }
 function dialog(i){
   const st=LEVELS[i].task.steps,box=document.getElementById("task");let p=0;render();
-  function render(){const s=st[p];box.innerHTML=`<h3>Task</h3><p>${LEVELS[i].task.prompt}</p><p><em>${s.npc}</em></p>`;
+  function render(){const s=st[p];box.inner=`<h3>Task</h3><p>${LEVELS[i].task.prompt}</p><p><em>${s.npc}</em></p>`;
     s.opt.forEach(([t,tag])=>{const b=document.createElement("button");b.textContent=t;b.style.margin=".5rem .3rem";b.onclick=()=>tag==="right"?ok():flash("Nope!",false);box.appendChild(b);});}
   function ok(){++p===st.length?finish(i):render();}
 }
@@ -451,7 +451,7 @@ function showRank(){
   tabs.forEach(t=>t.classList.remove("active"));
   if(board.length<5)["Avery","Nova","Lumen","Rex","Iris"].forEach((n,j)=>board.push({name:n,lv:j,pts:90-5*j,time:55+5*j,date:"—"}));
   board.sort((a,b)=>b.pts-a.pts).splice(20);put("srBoard",board);
-  body.innerHTML=`<h3>Leaderboard (Top 20)</h3>
+  body.inner=`<h3>Leaderboard (Top 20)</h3>
   <table id="rank"><thead><tr><th>#</th><th>Name</th><th>Pts</th><th>Time(s)</th><th>Lvl</th><th>Date</th></tr></thead><tbody>${
     board.map((e,i)=>`<tr class="${e.name===state.name?'me':''}"><td>${i+1}</td><td>${e.name}</td><td>${e.pts}</td><td>${e.time}</td><td>${e.lv+1}</td><td>${e.date}</td></tr>`).join("")
   }</tbody></table>`;
@@ -464,8 +464,8 @@ function shuffle(a){for(let i=a.length;i--;)a.push(a.splice(Math.random()*i|0,1)
 function flash(txt,ok){const d=document.createElement("div");d.textContent=txt;d.style.cssText=
   `position:fixed;top:70px;left:50%;transform:translateX(-50%);background:${ok?'var(--success)':'var(--danger)'};color:#fff;
    padding:.5rem 1rem;border-radius:8px;z-index:1000`;document.body.appendChild(d);setTimeout(()=>d.remove(),900);}
-function showModal(t,m,b,cb){mt.innerHTML=t;mm.innerHTML=m;mb.textContent=b;mb.onclick=cb;modal.classList.add("on");}
-function quit(){window.location.href="launcher.html";}
+function showModal(t,m,b,cb){mt.inner=t;mm.inner=m;mb.textContent=b;mb.onclick=cb;modal.classList.add("on");}
+function quit(){window.location.href="index.html";}
 
 /* =======================================================
    11. 初次引导
